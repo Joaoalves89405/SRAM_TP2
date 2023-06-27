@@ -76,6 +76,7 @@ def receive_m(socket):
 		if readable:
 			response, node_address = socket.recvfrom(BUFF_SIZE)
 			response = response.decode().split('|')
+			print("response", response)
 			match response[0]:
 				case 'C':
 					control_message_handle(response, socket)
