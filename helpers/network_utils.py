@@ -29,7 +29,6 @@ class NetworkElement:
 
     def handle_requests(self, socket):
         global off_flag
-        global Request_dict
 
         while off_flag == 0:
             r, _, _ = select.select([socket], [], [], 0)
