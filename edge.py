@@ -39,32 +39,32 @@ def add_active_neighbour(neighbour):
 		print("Neighbour already active : please check the request")
 
 def handle_requests(socket):
-	global off_flag
-	global Request_dict
-	
-	while off_flag == 0:
-		r,_,_ = select.select([socket],[],[], 0)
-		if r:
-			(rq, peer_address) = socket.recvfrom(BUFF_SIZE)
-			print("THIS is the Request ", rq.decode())
-			request = rq.decode().split('|')
-			# if len(Request_dict.values())>0:
-			# 	for req in Request_dict.values():
-			# 		print("Stored: ",req.request_id," from", req.element)
+    global off_flag
+    global Request_dict
 
-			match request[0]:
-				case 'C':
-					if request[1] == '0':
-						if len(request)>2:
-							neighbour_list = request[2].split(';')
-							for neighbour in neighbour_list:
-								add_active_neighbour(neighbour)
-						else:
-							print("There's not enough neighbours to initiate conversation")
-							time.sleep(3)
-							introduction_server(socket)
-				case 'R':
-					out = flood.request_r(socket, request, peer_address, Request_dict, Active_neighbours)
+    while off_flag == 0:
+        r, _, _ = select.select([socket], [], [], 0)
+        if r:
+            (rq, peer_address) = socket.recvfrom(BUFF_SIZE)
+            print("THIS is the Request ", rq.decode())
+            request = rq.decode().split('|')
+            # if len(Request_dict.values())>0:
+            #     for req in Request_dict.values():
+            #         print("Stored: ",req.request_id," from", req.element)
+
+            if request[0] == 'C':
+                if request[1] == '0':
+                    if len(request) > 2:
+                        neighbour_list = request[2].split(';')
+                        for neighbour in neighbour_list:
+                            add_active_neighbour(neighbour)
+                    else:
+                        print("There's not enough neighbours to initiate conversation")
+                        time.sleep(3)
+                        introduction_server(socket)
+            elif request[0] == 'R':
+                out = flood.request_r(socket, request, peer_address, Request_dict, Active_neighbours)
+
 				
 
 if __name__ == '__main__':

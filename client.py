@@ -47,26 +47,25 @@ def control_message_handle(response,socket):
 
 
 def receive_m(socket):
-	global Request_dict
-	global Active_neighbours
-	global OFF_flag
-	
-	while OFF_flag == 0:
-		pass
-		readable,_,_ = select.select([socket],[],[], 10)
-		if readable:
-			response, node_address = socket.recvfrom(BUFF_SIZE)
-			print("Received:",response.decode())
-			response = response.decode().split('|')
-			match response[0]:
-				case 'C':
-					control_message_handle(response, socket)
-				case 'R':
-					out = flood.request_r(socket, response, node_address, Request_dict, Active_neighbours)
-					print("Received well = ",out)
-			
-		else:
-			print(sys.stderr, 'timed out request to server.')
+    global Request_dict
+    global Active_neighbours
+    global OFF_flag
+
+    while OFF_flag == 0:
+        pass
+        readable, _, _ = select.select([socket], [], [], 10)
+        if readable:
+            response, node_address = socket.recvfrom(BUFF_SIZE)
+            print("Received:", response.decode())
+            response = response.decode().split('|')
+            if response[0] == 'C':
+                control_message_handle(response, socket)
+            elif response[0] == 'R':
+                out = flood.request_r(socket, response, node_address, Request_dict, Active_neighbours)
+                print("Received well =", out)
+        else:
+            print(sys.stderr, 'timed out request to server.')
+
 
 def request_stream(stream_ID, socket):
 	global Request_dict
@@ -148,23 +147,21 @@ def request_stream(stream_ID, socket):
 # 	socket.close()
 
 
-
 if __name__ == '__main__':
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    client_socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, BUFF_SIZE)
+    client_socket.bind((host_ip, port))
 
+    send_join_request(client_socket)
+    receiver_thread = threading.Thread(target=receive_m, args=(client_socket,))
+    receiver_thread.start()
 
-	client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-	client_socket.setsockopt(socket.SOL_SOCKET,socket.SO_RCVBUF,BUFF_SIZE)
-	client_socket.bind((host_ip, port))
-	
-		#res = input("\nEnter room: \n1) Nature \n2) Action \n3) Horror \n4) Animation \n : ")
-	send_join_request(client_socket)
-	receiver_thread = threading.Thread(target = receive_m, args = (client_socket,))
-	receiver_thread.start()
-	leave = input("If you intend to leave type 'x'\n")
-	if leave == "x":
-		OFF_flag = 1
-		for ip in Active_neighbours:
-		 	requests_with_IP = [x for (_,k2), x in Request_dict.items() if k2 == ip]
-		 	for req in requests_with_IP:
-		 		client_socket.sendto(('R|2|'+req.request_id+'|'+req.stream_id).encode(), (ip,port))
-	receiver_thread.join()
+    leave = input("If you intend to leave, type 'x'\n")
+    if leave == "x":
+        OFF_flag = 1
+        for ip in Active_neighbours:
+            requests_with_IP = [x for (_, k2), x in Request_dict.items() if k2 == ip]
+            for req in requests_with_IP:
+                client_socket.sendto(('R|2|' + req.request_id + '|' + req.stream_id).encode(), (ip, port))
+
+    receiver_thread.join()
