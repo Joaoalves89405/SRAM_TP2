@@ -7,14 +7,9 @@ import random
 
 from class_objects import Request, Stream
 import flooding_algorithm as flood
+from utils import BUFF_SIZE, host_ip, host_name, off_flag, port,socket_address
 
-BUFF_SIZE = 65536
 TIMEOUT = 3
-OFF_flag=0
-
-hostname = socket.gethostname()
-host_ip = socket.gethostbyname(hostname)
-
 List_of_streams = []
 Active_neighbours = []
 Request_dict = dict() # ((Request_ID, origin_IP) : Request_OBJECT)
@@ -49,9 +44,9 @@ def control_message_handle(response,socket):
 def receive_m(socket):
 	global Request_dict
 	global Active_neighbours
-	global OFF_flag
+	global off_flag
 	
-	while OFF_flag == 0:
+	while off_flag == 0:
 		pass
 		readable,_,_ = select.select([socket],[],[], 10)
 		if readable:
@@ -96,7 +91,7 @@ def request_stream(stream_ID, socket):
 	#pass
 
 # def receive_stream(socket, neighbours_list):
-# 	global OFF_flag
+# 	global off_flag
 # 	fps,st,frames_to_count,cnt = (0,0,20,0)
 # 	latency = 0
 # 	latency_total = 0
@@ -160,7 +155,7 @@ if __name__ == '__main__':
     receiver_thread.start()
     leave = input("If you intend to leave type 'x'\n")
     if leave == "x":
-        OFF_flag = 1
+        off_flag = 1
         for ip in Active_neighbours:
             requests_with_IP = [x for (_, k2), x in Request_dict.items() if k2 == ip]
             for req in requests_with_IP:

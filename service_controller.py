@@ -1,15 +1,8 @@
 import socket, sched, struct, time, threading, select, base64, math
 from class_objects import Node, Stream
+from utils import BUFF_SIZE, host_ip, host_name, off_flag, port,socket_address
 
 # Socket Create
-host_name = socket.gethostname()
-host_ip = socket.gethostbyname(host_name)
-print('HOST IP:', host_ip)
-port = 9090
-BUFF_SIZE = 65536
-socket_address = (host_ip, port)
-off_flag = 0
-print("LISTENING AT:", socket_address)
 node_dict = dict()
 available_stream_list = []
 

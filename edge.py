@@ -6,16 +6,7 @@ import select
 import base64
 
 import flooding_algorithm as flood
-from class_objects import Request
-
-
-host_name = socket.gethostname()
-host_ip = socket.gethostbyname(host_name)
-print(host_ip)
-port = 9090
-socket_address = (host_ip, port)
-off_flag = 0
-BUFF_SIZE = 65536
+from utils import BUFF_SIZE, host_ip, host_name, off_flag, port,socket_address
 
 List_of_streams = []
 Active_neighbours = []

@@ -7,14 +7,8 @@ import base64
 
 import flooding_algorithm as flood
 from class_objects import Stream, Request
+from utils import BUFF_SIZE, host_ip, host_name, off_flag, port,socket_address
 
-host_name = socket.gethostname()
-host_ip = socket.gethostbyname(host_name)
-port = 9090
-socket_address = (host_ip, port)
-print("Streaming Server info : ", socket_address)
-off_flag = 0
-BUFF_SIZE = 65536
 List_of_streams = []
 Active_neighbours = []
 Request_dict = dict() # ((Request_ID, origin_IP) : Request_OBJECT)
