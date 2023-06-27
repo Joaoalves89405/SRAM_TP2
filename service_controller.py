@@ -37,82 +37,81 @@ def function():
 	pass
 
 def receive_requests(controller_socket):
-	global off_flag
-	
-	while off_flag == 0:
-		r,_,_ = select.select([controller_socket],[],[], 0)
-		if r:
-			(message_rq, client_address) = controller_socket.recvfrom(BUFF_SIZE)
-			#print("THIS is the Helllo message :", message_rq.decode(), "From: ", client_address[0])
-			request = message_rq.decode().split('|')
-			match request[0]:
-				case 'C':	#Control message
-					control_response(controller_socket, client_address[0], request)
+    global off_flag
 
-	controller_socket.close()
+    while off_flag == 0:
+        r, _, _ = select.select([controller_socket], [], [], 0)
+        if r:
+            (message_rq, client_address) = controller_socket.recvfrom(BUFF_SIZE)
+            # print("THIS is the Hello message :", message_rq.decode(), "From: ", client_address[0])
+            request = message_rq.decode().split('|')
+            if request[0] == 'C':  # Control message
+                control_response(controller_socket, client_address[0], request)
+
+    controller_socket.close()
+
 
 
 def control_response(controller_socket, user_ip, message_rq):
-	
-	active_n_list = []
-	#Prepare a response message, 'C' for control message and '0' for Hello 
-	message = 'C|0'
+    active_n_list = []
+    # Prepare a response message, 'C' for control message and '0' for Hello
+    message = 'C|0'
 
-	#Find which node sent the message and set it as active
-	node = node_dict.get(user_ip)
-	if not node.is_active():
-		node.activate()
-		print(node.tag," is online")
+    # Find which node sent the message and set it as active
+    node = node_dict.get(user_ip)
+    if not node.is_active():
+        node.activate()
+        print(node.tag, " is online")
 
+    # Get a list of active neighbours related to the main node
+    for neighbour in node.neighbours_list:
+        n = node_dict.get(neighbour)
+        if n.is_active():
+            active_n_list.append(n.ip)
 
-	#Get a list of active neighbours related to the main node
-	for neighbour in node.neighbours_list:
-		n = node_dict.get(neighbour)
-		if n.is_active():
-			active_n_list.append(n.ip)
+    # Add the list of active neighbours to the message so it can inform the main node
+    if len(active_n_list) > 0:
+        message += '|'
+        for neighbour in active_n_list[:-1]:
+            message += str(neighbour) + ';'
+        message += str(active_n_list[-1])
+    else:
+        pass  # print("Less than one active neighbour for ", node.tag,". List: ", active_n_list)
 
-	#Add the list of active neighbours to the message so it can inform the main node
-	if len(active_n_list)>0:	
-		message += '|'
-		for neighbour in active_n_list[:-1]:
-			message += str(neighbour) + ';'
-		message += str(active_n_list[-1])
-	else:
-		pass#print("Less than one active neighbour for ", node.tag,". List: ", active_n_list)		
+    # Checks if node who sent the message is a Client
+    # If it is a client then the available streams are also sent in the message
+    if node.type == "C":
+        if len(available_stream_list) > 0 and len(active_n_list) > 0:
+            print(available_stream_list)
+            message += '|'
+            for stream in available_stream_list:
+                for _, value in stream.__dict__.items():
+                    message += value + '>'
+                message = message[:-1] + ';'
+            message = message[:-1]
+        else:
+            print("Streams not yet available...", available_stream_list)
+    elif node.type == "S":
+        # This serves as a space to include new info in the hello message response
+        if message_rq[1] == '0' and len(message_rq) > 2:
+            # print("Stream available received: ", message_rq[2:] )
+            for meta_info in message_rq[2:]:
+                print(meta_info)
+                stream_meta = meta_info.split(';')
+                s = Stream(stream_meta[1], stream_meta[2], stream_meta[3], stream_meta[4], stream_meta[0])
+                if not any(x.tag == stream_meta[0] for x in available_stream_list):
+                    available_stream_list.append(s)
 
-	#Checks if node who sent the message is a Client
-	#If it is a client then the available streams are also sent in the message
-	match node.type:
-		case "C":
-			if len(available_stream_list)>0 and len(active_n_list)>0:
-				print(available_stream_list)
-				message += '|'
-				for stream in available_stream_list:
-					for _,value in stream.__dict__.items():
-						message += value + '>'
-					message = message[:-1]+';'
-				message = message[:-1]
-			else:
-				print("Streams not yet available...", available_stream_list)
-		case "S":
-			#This serves as a space to include new info in the hello message response
-			if message_rq[1] == '0' and len(message_rq)>2:
-				#print("Stream available received: ", message_rq[2:] )
-				for meta_info in message_rq[2:]:
-					print(meta_info)
-					stream_meta = meta_info.split(';')
-					s = Stream(stream_meta[1],stream_meta[2],stream_meta[3],stream_meta[4], stream_meta[0])
-					if not (any(x.tag is stream_meta[0] for x in available_stream_list)):
-						available_stream_list.append(s)
-						
-			#print("STREAM LIST: ", available_stream_list)
-	#Finnaly the message is sent as response to the same IP
-	try:
-		print("Sent message:",message)
-		controller_socket.sendto(message.encode(), (user_ip, port))
-	except Exception as e:
-		print(e)
-		raise Exception(e)
+        # print("STREAM LIST: ", available_stream_list)
+
+    # Finally, the message is sent as a response to the same IP
+    try:
+        print("Sent message:", message)
+        controller_socket.sendto(message.encode(), (user_ip, port))
+    except Exception as e:
+        print(e)
+        raise Exception(e)
+
 
 
 
