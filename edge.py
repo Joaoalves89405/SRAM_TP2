@@ -5,8 +5,8 @@ import threading
 import select
 import base64
 
-import flooding_algorithm as flood
-from utils import BUFF_SIZE, host_ip, host_name, off_flag, port,socket_address
+import helpers.flooding_algorithm as flood
+from helpers.utils import BUFF_SIZE, host_ip, host_name, off_flag, port,socket_address
 
 List_of_streams = []
 Active_neighbours = []

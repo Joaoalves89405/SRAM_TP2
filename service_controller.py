@@ -1,6 +1,6 @@
 import socket, sched, struct, time, threading, select, base64, math
-from class_objects import Node, Stream
-from utils import BUFF_SIZE, host_ip, host_name, off_flag, port,socket_address
+from helpers.class_objects import Node, Stream
+from helpers.utils import BUFF_SIZE, host_ip, host_name, off_flag, port,socket_address
 
 # Socket Create
 node_dict = dict()
@@ -8,7 +8,7 @@ available_stream_list = []
 
 def setup():
 	global node_dict
-	with open("conf_file.txt") as f:
+	with open("./config/conf_file.txt") as f:
 		for line in f:
 			word = line.split(" ")
 			if word[0] == "T":#TAG

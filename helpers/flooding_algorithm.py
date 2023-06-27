@@ -1,7 +1,7 @@
 import socket
 import time
 import threading
-from class_objects import Stream, Request
+from helpers.class_objects import Stream, Request
 
 def request_r(socket, request, origin_address, request_dict, neighbours_list):
 	type_of_message = request[1]

@@ -5,9 +5,9 @@ import time
 import threading
 import random
 
-from class_objects import Request, Stream
-import flooding_algorithm as flood
-from utils import BUFF_SIZE, host_ip, host_name, off_flag, port,socket_address
+from helpers.class_objects import Request, Stream
+import helpers.flooding_algorithm as flood
+from helpers.utils import BUFF_SIZE, host_ip, host_name, off_flag, port,socket_address
 
 TIMEOUT = 3
 List_of_streams = []
