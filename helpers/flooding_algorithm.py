@@ -127,7 +127,7 @@ def request_r(socket, request, origin_address, request_dict, neighbours_list):
 			stream_content = request[3:]
 			for req in request_dict.values():
 				#print("LIST OF REQUESTS entry:", req.request_id,"|", req.stream_id,"|", req.state,"|" ,req.element)
-				print("REQ ", req)
+				print("REQ ", req.state)
 				if req.stream_id == stream_ID :
 		
 					if req.state == "Received":
