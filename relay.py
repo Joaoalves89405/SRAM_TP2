@@ -50,7 +50,7 @@ def handle_requests(socket):
     """
     The function handles incoming requests from a socket and performs actions based on the type of
     request received.
-    
+
     :param socket: The socket parameter is a network socket object that is used to send and receive data
     over the network. It is used to communicate with other nodes in the network
     """
@@ -63,19 +63,19 @@ def handle_requests(socket):
             rq, peer_address = socket.recvfrom(BUFF_SIZE)
             request = rq.decode().split('|')
 
-            match request[0]:
-                case 'C':
-                    if request[1] == '0':
-                        if len(request) > 2:
-                            neighbour_list = request[2].split(';')
-                            for neighbour in neighbour_list:
-                                add_active_neighbour(neighbour)
-                        else:
-                            print("There's not enough neighbours to initiate conversation")
-                            time.sleep(3)
-                            introduction_server(socket)
-                case 'R':
-                    out = flood.request_r(socket, request, peer_address, Request_dict, Active_neighbours)
+            if request[0] == 'C':
+                if request[1] == '0':
+                    if len(request) > 2:
+                        neighbour_list = request[2].split(';')
+                        for neighbour in neighbour_list:
+                            add_active_neighbour(neighbour)
+                    else:
+                        print("There's not enough neighbours to initiate conversation")
+                        time.sleep(3)
+                        introduction_server(socket)
+            elif request[0] == 'R':
+                out = flood.request_r(socket, request, peer_address, Request_dict, Active_neighbours)
+
 
 
 if __name__ == '__main__':
