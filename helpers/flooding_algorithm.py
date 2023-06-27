@@ -134,7 +134,7 @@ def request_r(socket, request, origin_address, request_dict, neighbours_list):
 						socket.sendto(('R|1|'+req.request_id).encode(), (req.element,9090))
 						req.change_state("A")
 					elif req.state == "Sent":
-						print("Forward content: ", stream_content[0])				
+						#print("Forward content: ", stream_content[0])				
 						socket.sendto(('R|2|'+req.request_id+'|'+req.stream_id).encode(), (req.element,9090))
 						request_dict.pop(req.request_id,req.element)
 					elif req.state == "Active Retransmission":
