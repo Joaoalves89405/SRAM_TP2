@@ -34,39 +34,40 @@ class Node(object):
 		self.state = False
 	def is_active(self):
 		return self.state
+
 class Request(object):
-    """docstring for Request"""
-    def __init__(self, request_id, stream_id, state, element, ttl=0):
-        super(Request, self).__init__()
-        self.request_id = request_id
-        self.stream_id = stream_id
-        self.state = state
-        self.element = element
-        self.ttl = ttl
+	"""docstring for Request"""
+	def __init__(self, request_id, stream_id, state, element, ttl = 0):
+		super(Request, self).__init__()
+		self.request_id = request_id
+		self.stream_id = stream_id
+		self.state = state
+		self.element = element
+		self.ttl = ttl
 
-    def change_state(self, new_state):
-        if new_state == 'R':
-            # new state is: Received
-            self.state = "Received"
-            return 0
-        elif new_state == 'S':
-            # new state is: Sent
-            self.state = "Sent"
-            return 0
-        elif new_state == 'A':
-            # new state is: Answered
-            self.state = "Answered"
-            return 0
-        elif new_state == 'C':
-            # new state is: Confirmed
-            self.state = "Confirmed"
-            return 0
-        elif new_state == 'AR':
-            # new state is: Active Retransmission
-            self.state = "Active Retransmission"
-            return 0
-        elif new_state == 'D':
-            # new state is: Deleted
-            self.state = "Deleted"
-            return 0
-
+	def change_state(self, new_state):
+		match new_state:
+			case 'R':
+				#new state is: Received
+				self.state = "Received"
+				return 0
+			case 'S':
+				#new state is: Sent
+				self.state = "Sent"
+				return 0
+			case 'A':
+				#new state is: Answered
+				self.state = "Answered"
+				return 0
+			case 'C':
+				#new state is: Confirmed
+				self.state = "Confirmed"
+				return 0
+			case 'AR':
+				#new state is: Active Retransmission
+				self.state = "Active Retransmission"
+				return 0
+			case 'D':
+				#new state is: Deleted
+				self.state = "Deleted"
+				return 0
