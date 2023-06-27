@@ -32,7 +32,6 @@ def introduction_server(socket, streams_available):
 		stream_meta = '|'+str(stream.tag)+';'+stream.name+';'+str(stream.fps)+';'+str(stream.max_delay)+';'+stream.type_of_data				
 		hello_msg += stream_meta
 
-	print("Sent : ",hello_msg)
 	try:
 		socket.sendto(hello_msg.encode(), (service_controller_ip, port))
 	except Exception as e:
@@ -94,7 +93,7 @@ def send_time(socket, stream_ID, client_address):
 	message = 'R|S|'
 	t = time.strftime('%H:%M:%S', time.gmtime())
 	message += stream_ID +'|'+ t
-	print(message)
+	print("Sended streamID: ",stream_ID," with payload ", t, " to ",client_address)
 	socket.sendto(message.encode(),(client_address))
 
 def handle_requests(socket):
@@ -114,10 +113,10 @@ def handle_requests(socket):
 		if r:
 			(rq, client_address) = socket.recvfrom(BUFF_SIZE)
 			request = rq.decode()
-			print("THIS is the Request ", request)
 			request = request.split('|')
 			match request[0]:
-				case 'C': # Received a control ('C') message
+				case 'C': 
+					print("Control message received: ", request)
 					if request[1] == '0':
 						if len(request)>2:
 							neighbour_list = request[2].split(';')
@@ -127,9 +126,8 @@ def handle_requests(socket):
 							time.sleep(3)
 							introduction_server(socket, List_of_streams)
 				case 'R':
-					print("Received request: ", rq.decode())
+					print("Request received: ", rq.decode())
 					out = flood.request_r(socket, request, client_address, Request_dict, Active_neighbours)
-					print(out)
 					if out != 0:
 						if out[0] == "stream":
 							for stream in List_of_streams:
@@ -141,14 +139,13 @@ def handle_requests(socket):
 							print("CANCELLED")
 							off_flag = 1
 					else:
-						print("Added a request")				
+						print("Request added to the queue")				
 				case 'S':
 					out = flood.request_r(socket, request, client_address, Request_dict, Active_neighbours)
 					if out == 0:
 						pass
 	for thread in bag_of_threads:
 		thread.join()
-		#SEND request to relay servers of RQ
 
 
 # The `if __name__ == '__main__':` block is a conditional statement that checks if the current script
@@ -165,7 +162,6 @@ if __name__ == '__main__':
 	server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 	server_socket.setsockopt(socket.SOL_SOCKET,socket.SO_RCVBUF,BUFF_SIZE)
 	server_socket.bind(socket_address)
-	print('Running Stream server on ', server_socket.getsockname())
 
 	time_stream = Stream("time",1,0.5,"text", "1")
 	sound_stream = Stream("music",10000,0.1,"sound","2")
@@ -183,9 +179,8 @@ if __name__ == '__main__':
 	receiver_thread = threading.Thread(target = handle_requests, args = (server_socket,))
 	receiver_thread.start()
 	
-	leave = input("If you intend to leave type 'x'\n")
+	leave = input("Press 'x' to leave\n")
 	if leave == "x":
-		print("Leaving...")
 		off_flag = 1
 
 	receiver_thread.join()

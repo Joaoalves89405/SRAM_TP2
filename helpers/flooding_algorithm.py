@@ -56,7 +56,7 @@ def request_r(socket, request, origin_address, request_dict, neighbours_list):
 				request_dict[req_ID, origin_address[0]] = rq_obj
 
 			return 0
-		
+			
 		# This code block is handling the request message with type '1'. It first extracts the request ID
 		# from the message and checks if there are any existing requests with the same request ID. If there
 		# are, it checks if any of them were sent from the same IP address as the current request. If there
@@ -70,7 +70,6 @@ def request_r(socket, request, origin_address, request_dict, neighbours_list):
 				pass
 			if any(x.element == origin_address[0] for x in requests_with_id):
 				rq_obj = request_dict.get((req_ID, origin_address[0]))
-				print(rq_obj)
 				if rq_obj.state == "Sent":
 					socket.sendto(('R|1|'+req_ID).encode(), origin_address)
 					print("Sent a Confirmation to: ", origin_address[0], "\nThis was the message: ", 'R|1|'+req_ID)
@@ -81,7 +80,6 @@ def request_r(socket, request, origin_address, request_dict, neighbours_list):
 					#Returns the stream id so it may be transmitted on the node
 			elif (x.element == socket.getsockname()[0] for x in requests_with_id):
 				rq_obj = request_dict.get((req_ID,socket.getsockname()[0]))
-				print(rq_obj)
 				if rq_obj.state == "Sent":
 					socket.sendto(('R|1|'+req_ID).encode(), origin_address)
 					print("Sent a Confirmation to: ", origin_address[0], "\nThis was the message: ", 'R|1|'+req_ID)
@@ -127,19 +125,16 @@ def request_r(socket, request, origin_address, request_dict, neighbours_list):
 		case 'S':
 			stream_ID = request[2]
 			stream_content = request[3:]
-			print("This is the stream content:", stream_content[0])
-			print("Streaming TIME : ", request[2])
+			print("Stream content: ", stream_content[0])
 			for req in request_dict.values():
-				print("LIST OF REQUESTS entry:", req.request_id,"|", req.stream_id,"|", req.state,"|" ,req.element)
+				#print("LIST OF REQUESTS entry:", req.request_id,"|", req.stream_id,"|", req.state,"|" ,req.element)
 
 				if req.stream_id == stream_ID :
 		
 					if req.state == "Received":
-						print("req_state == received : ", req.state)
 						socket.sendto(('R|1|'+req.request_id).encode(), (req.element,9090))
 						req.change_state("A")
-					elif req.state == "Sent":
-						print("Request State == Sent : ", req.state)						
+					elif req.state == "Sent":				
 						socket.sendto(('R|2|'+req.request_id+'|'+req.stream_id).encode(), (req.element,9090))
 						request_dict.pop(req.request_id,req.element)
 					elif req.state == "Active Retransmission":

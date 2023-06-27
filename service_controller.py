@@ -63,20 +63,17 @@ def control_response(controller_socket, user_ip, message_rq):
 	active_n_list = []
 	message = 'C|0'
 
-	#Find which node sent the message and set it as active
 	node = node_dict.get(user_ip)
 	if not node.is_active():
 		node.activate()
-		print(node.tag," is online")
+		print("alert: ", node.tag ," is online")
 
 
-	#Get a list of active neighbours related to the main node
 	for neighbour in node.neighbours_list:
 		n = node_dict.get(neighbour)
 		if n.is_active():
 			active_n_list.append(n.ip)
 
-	#Add the list of active neighbours to the message so it can inform the main node
 	if len(active_n_list)>0:	
 		message += '|'
 		for neighbour in active_n_list[:-1]:
@@ -85,8 +82,6 @@ def control_response(controller_socket, user_ip, message_rq):
 	else:
 		pass
 
-	#Checks if node who sent the message is a Client
-	#If it is a client then the available streams are also sent in the message
 	match node.type:
 		case "C":
 			if len(available_stream_list)>0 and len(active_n_list)>0:
@@ -98,9 +93,8 @@ def control_response(controller_socket, user_ip, message_rq):
 					message = message[:-1]+';'
 				message = message[:-1]
 			else:
-				print("Streams not yet available...", available_stream_list)
+				print("Streams not available yet", available_stream_list)
 		case "S":
-			#This serves as a space to include new info in the hello message response
 			if message_rq[1] == '0' and len(message_rq)>2:
 				for meta_info in message_rq[2:]:
 					print(meta_info)
@@ -109,9 +103,8 @@ def control_response(controller_socket, user_ip, message_rq):
 					if not (any(x.tag is stream_meta[0] for x in available_stream_list)):
 						available_stream_list.append(s)
 						
-	#Finnaly the message is sent as response to the same IP
 	try:
-		print("Sent message:",message)
+		print("Payload sent:",message)
 		controller_socket.sendto(message.encode(), (user_ip, port))
 	except Exception as e:
 		print(e)
@@ -133,6 +126,6 @@ if __name__ == '__main__':
 	setup()
 	receiver_thread = threading.Thread(target = receive_requests, args = (controller_socket,))
 	receiver_thread.start()
-	leave = input("If you intend to leave type 'x'\n")
+	leave = input("Press 'x' to leave\n")
 	if leave == "x":
 		off_flag = 1

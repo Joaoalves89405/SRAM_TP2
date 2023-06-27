@@ -26,7 +26,7 @@ def send_join_request(socket):
 	server at a specific
 	"""
 	message = 'C|0|'
-	bytes_sent = socket.sendto(message.encode(), (service_controller_ip, port))
+	socket.sendto(message.encode(), (service_controller_ip, port))
 
 def control_message_handle(response,socket):
 	"""
@@ -51,11 +51,11 @@ def control_message_handle(response,socket):
 		s = Stream(s_info[1], s_info[2], s_info[3], s_info[4], s_info[0])
 		List_of_streams[i] = s
 	
-	print("NEIGHBOURS LIST :", Active_neighbours)
-	print("STREAM LIST :")
+	print("List of neighbours: ", Active_neighbours)
+	print("Streams available : ")
 	for stream in List_of_streams:
-		print(" ->", stream.name)
-
+		print(stream.name)
+	print("Requesting stream: ", List_of_streams[0].name)
 	request_stream(List_of_streams[0].tag, socket)
 		
 
@@ -75,17 +75,16 @@ def receive_m(socket):
 		readable,_,_ = select.select([socket],[],[], 10)
 		if readable:
 			response, node_address = socket.recvfrom(BUFF_SIZE)
-			print("Received:",response.decode())
 			response = response.decode().split('|')
 			match response[0]:
 				case 'C':
 					control_message_handle(response, socket)
 				case 'R':
 					out = flood.request_r(socket, response, node_address, Request_dict, Active_neighbours)
-					print("Received well = ",out)
+					#print("Received well = ",out)
 			
 		else:
-			print(sys.stderr, 'timed out request to server.')
+			print('Request timed out')
 
 def request_stream(stream_ID, socket):
 	"""
@@ -100,21 +99,15 @@ def request_stream(stream_ID, socket):
 	global Active_neighbours
 	n = 8
 	request_ID = ''
-	print("Requesting stream")
 	for _ in range(n):
 		a = str(random.randint(0,9)) 
 		request_ID+=a
-	print("REQUEST_ID:",request_ID)
 	r = Request(request_ID, stream_ID, "Sent", host_ip)
 	Request_dict[request_ID,host_ip] = r
-	print(Active_neighbours)
-	for req in Request_dict.values():
-		print("Requests list member:",  req.request_id,"|", req.stream_id,"|", req.state,"|" ,req.element)
 		
 	for neighbour in Active_neighbours:
-		print("Sending to ", neighbour)
-		bytes_sent = socket.sendto(('R|0|'+r.request_id+'|'+r.stream_id).encode(), (neighbour, port))
-		print("Sent ", 'R|0|'+r.request_id+'|'+r.stream_id, " bytes to ", host_ip,":",neighbour)
+		print("Sending payload: ", 'R|0|'+r.request_id+'|'+r.stream_id, "to ",neighbour)
+		socket.sendto(('R|0|'+r.request_id+'|'+r.stream_id).encode(), (neighbour, port))
 
 # This code block is the main function of the program. It creates a UDP socket, sets the buffer size,
 # binds the socket to a host IP and port, sends a join request to a service controller, starts a
@@ -128,7 +121,7 @@ if __name__ == '__main__':
     send_join_request(client_socket)
     receiver_thread = threading.Thread(target=receive_m, args=(client_socket,))
     receiver_thread.start()
-    leave = input("If you intend to leave type 'x'\n")
+    leave = input("Press 'x' to leave\n")
     if leave == "x":
         off_flag = 1
         for ip in Active_neighbours:

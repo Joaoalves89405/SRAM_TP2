@@ -25,7 +25,7 @@ class NetworkElement:
         if neighbour not in self.Active_neighbours:
             self.Active_neighbours.append(neighbour)
         else:
-            print("Neighbour already active: please check the request")
+            print("Neighbour already active")
 
     def handle_requests(self, socket):
         global off_flag
@@ -45,7 +45,6 @@ class NetworkElement:
                                 for neighbour in neighbour_list:
                                     self.add_active_neighbour(neighbour)
                             else:
-                                print("There are not enough neighbours to initiate conversation")
                                 time.sleep(3)
                                 self.introduction_server(socket)
                     case 'R':
@@ -55,19 +54,17 @@ class NetworkElement:
         self.element_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.element_socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, BUFF_SIZE)
         self.element_socket.bind(socket_address)
-        print('Running Network element on', self.element_socket.getsockname())
 
         self.introduction_server(self.element_socket)
         receiver_thread = threading.Thread(target=self.handle_requests, args=(self.element_socket,))
         receiver_thread.start()
-        leave = input("If you intend to leave type 'x'\n")
+        leave = input("Press 'x' to leave\n")
         if leave == "x":
             for ip in self.Active_neighbours:
                 requests_with_IP = [x for (_, k2), x in self.Request_dict.items() if k2 == ip]
                 for req in requests_with_IP:
                     self.element_socket.sendto(('R|2|' + req.request_id + '|' + req.stream_id).encode(), (ip, port))
 
-            print("Leaving...")
             off_flag = 1
 
         receiver_thread.join()
