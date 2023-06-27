@@ -3,11 +3,10 @@ import sched
 import time
 import threading
 import select
-import base64
 
 import helpers.flooding_algorithm as flood
 from helpers.class_objects import Stream, Request
-from helpers.utils import BUFF_SIZE, host_ip, host_name, off_flag, port,socket_address
+from helpers.utils import BUFF_SIZE, host_ip, off_flag, port,socket_address
 
 List_of_streams = []
 Active_neighbours = []

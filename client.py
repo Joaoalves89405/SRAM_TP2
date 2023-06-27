@@ -1,13 +1,12 @@
 import socket
 import select
 import sys
-import time
 import threading
 import random
 
 from helpers.class_objects import Request, Stream
 import helpers.flooding_algorithm as flood
-from helpers.utils import BUFF_SIZE, host_ip, host_name, off_flag, port,socket_address
+from helpers.utils import BUFF_SIZE, host_ip, off_flag, port
 
 TIMEOUT = 3
 List_of_streams = []
@@ -83,66 +82,6 @@ def request_stream(stream_ID, socket):
 		print("Sending to ", neighbour)
 		bytes_sent = socket.sendto(('R|0|'+r.request_id+'|'+r.stream_id).encode(), (neighbour, port))
 		print("Sent ", 'R|0|'+r.request_id+'|'+r.stream_id, " bytes to ", host_ip,":",neighbour)
-	#readable,_,_ = select.select([socket],[],[], 0)
-	#if not readable:
-	#	print(sys.stderr, 'timed out request to server.')	
-	#receive_stream(socket, neighbours_list)
-		#response = socket.recv(4096)
-	#pass
-
-# def receive_stream(socket, neighbours_list):
-# 	global off_flag
-# 	fps,st,frames_to_count,cnt = (0,0,20,0)
-# 	latency = 0
-# 	latency_total = 0
-# 	tns = 0
-# 	n_frames = 0
-# 	first = True
-# 	fastest_edge = 0
-	
-# 	while True:
-# 		r,_,_ = select.select([socket],[],[], 0)
-# 		if r:
-# 			packet, edge_address = socket.recvfrom(BUFF_SIZE)  # 4K, range(1024 byte to 64KB)
-# 			if not packet: 
-# 				#print("ENDED")
-# 				break
-# 			#latency_total += time.time_ns()- int(packet[-19:].decode())
-# 			edge_id = packet[0]
-# 			if first == True:
-# 				print("FIRST RECEIVED from : ", edge_address[0])
-# 				print("OLD neighbour list: ", neighbours_list)
-# 				neighbours_list.remove(edge_address[0])
-# 				print("New neighbour list: ", neighbours_list)
-# 				for neighbour in neighbours_list:
-# 					print(neighbour)
-# 					socket.sendto("x".encode(), (neighbour,port))
-# 				pass
-# 			first = False
-# 			#print(edge_id, end="\n")
-# 			data = packet[-8:].decode()
-# 			n_frames+=1
-# 			if n_frames == 50:
-# 				latency = latency_total/n_frames
-# 				latency_total = 0
-# 				#print(latency)
-# 				n_frames = 0
-# 				pass
-# 			print(data, end = "\r")
-# 			if cnt == frames_to_count:
-# 				try:
-# 					fps = round(frames_to_count/(time.time()-st))
-# 					# latency = time.time_ns()-tns
-# 					# tns = time.time_ns()
-# 					st=time.time()
-# 					cnt=0
-# 				except Exception as e:
-# 					print(e)
-# 					pass
-# 			cnt+=1
-# 	socket.close()
-
-
 
 if __name__ == '__main__':
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
