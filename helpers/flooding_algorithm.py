@@ -125,19 +125,21 @@ def request_r(socket, request, origin_address, request_dict, neighbours_list):
 		case 'S':
 			stream_ID = request[2]
 			stream_content = request[3:]
-			print("Stream content: ", stream_content[0])
 			for req in request_dict.values():
 				#print("LIST OF REQUESTS entry:", req.request_id,"|", req.stream_id,"|", req.state,"|" ,req.element)
 
 				if req.stream_id == stream_ID :
 		
 					if req.state == "Received":
+						print("Stream content: ", stream_content[0])
 						socket.sendto(('R|1|'+req.request_id).encode(), (req.element,9090))
 						req.change_state("A")
-					elif req.state == "Sent":				
+					elif req.state == "Sent":
+						print("Forward content: ", stream_content[0])				
 						socket.sendto(('R|2|'+req.request_id+'|'+req.stream_id).encode(), (req.element,9090))
 						request_dict.pop(req.request_id,req.element)
 					elif req.state == "Active Retransmission":
+						print("Retransmitted content: ", stream_content[0])
 						socket.sendto(('R|S|'+req.stream_id+'|'+str(stream_content[0])).encode(), (req.element,9090))
 			
 
