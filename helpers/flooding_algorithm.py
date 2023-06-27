@@ -7,6 +7,17 @@ def request_r(socket, request, origin_address, request_dict, neighbours_list):
 	type_of_message = request[1]
 
 	match type_of_message:
+		# This code block is handling the request message with type '0'. It first extracts the request ID
+		# and stream ID from the message. Then, it checks if there are any existing requests with the same
+		# request ID. If there are, it checks if any of them were sent from the same IP address as the
+		# current request. If there is a match, it prints a message indicating that there is already a
+		# request from that IP address. Otherwise, it sends a message of type '2' to the origin address
+		# indicating that there are no requests from that IP address. If there are no existing requests with
+		# the same request ID, it checks if there is an active retransmission for the desired stream ID. If
+		# there is, it sends a message of type '1' to the origin address indicating that the request has
+		# been answered. If there is no active retransmission, it adds the request to the request dictionary
+		# and sends the request to all neighbors except the origin address. Finally, it adds the request to
+		# the request dictionary with the origin address as the element and returns 0.
 		case '0':
 			req_ID = request[2]
 			stream_ID = request[3]
@@ -45,11 +56,17 @@ def request_r(socket, request, origin_address, request_dict, neighbours_list):
 				request_dict[req_ID, origin_address[0]] = rq_obj
 
 			return 0
+		
+		# This code block is handling the request message with type '1'. It first extracts the request ID
+		# from the message and checks if there are any existing requests with the same request ID. If there
+		# are, it checks if any of them were sent from the same IP address as the current request. If there
+		# is a match, it sends a message of type '1' to the origin address indicating that the request has
+		# been answered. If there is no match, it returns the stream ID so it may be transmitted on the
+		# node.
 		case '1':
 			req_ID = request[2]
 			requests_with_id = [x for (k1,_), x in request_dict.items() if k1 == req_ID]
 			for x in requests_with_id:
-				#print("requests_with_id:", x.element)
 				pass
 			if any(x.element == origin_address[0] for x in requests_with_id):
 				rq_obj = request_dict.get((req_ID, origin_address[0]))
@@ -70,6 +87,14 @@ def request_r(socket, request, origin_address, request_dict, neighbours_list):
 					print("Sent a Confirmation to: ", origin_address[0], "\nThis was the message: ", 'R|1|'+req_ID)
 					rq_obj.change_state("C")
 
+		# This code block is handling the request message with type '2'. It first extracts the request ID
+		# and stream ID from the message. Then, it checks if there are any existing requests with the same
+		# request ID. If there are, it sends a message of type '2' to all nodes except the origin address
+		# indicating that the request has been cancelled. It also removes the request from the request
+		# dictionary. Finally, it checks if there are any remaining requests with the same stream ID. If
+		# there are not, it returns a tuple with the string "cancel" and the stream ID so that the stream
+		# may be cancelled on the node. If there are remaining requests with the same stream ID, it returns
+		# 0.
 		case '2':
 			req_ID = request[2]
 			stream_ID = request[3]
@@ -77,25 +102,28 @@ def request_r(socket, request, origin_address, request_dict, neighbours_list):
 
 			requests_with_id = [x for (k1,_), x in request_dict.items() if k1 == req_ID]
 			for request in request_dict.values():
-				#print(request.__dict__.values())
 				pass
 			for req in requests_with_id:
-				#print("Requests Available to cancel:", req.request_id, "element:",req.element, "state:",req.state)
 				if req.state == "Sent" or req.state == "Active Retransmission" or req.state == "Confirmed":
-					#print("Requests with state sent or Active Retransmission:", req.element)
-					#print(origin_address)
 					if req.element != origin_address[0]:
-						#print("Sent request to cancel to ", req.element)
 						socket.sendto(('R|2|'+req_ID+'|'+stream_ID).encode(), (req.element,9090))
 				ret = request_dict.pop((req.request_id, req.element))
 			for requ in request_dict.values():
 				if len(requ.request_id)==8:
 					real_request.append(requ)
-					#print("Requests that are real :",requ.__dict__.values())
 			if not any(x.stream_id == stream_ID for x in real_request):
-				#print("Received notice to cancel")
 				return ("cancel", stream_ID)
 			return 0
+		
+		# This code block is handling the request message with type 'S', which is used for streaming
+		# content. It extracts the stream ID and stream content from the message and then iterates through
+		# the request dictionary to find any requests that match the stream ID. For each matching request,
+		# it checks the state of the request. If the state is "Received", it sends a message of type '1' to
+		# the element indicating that the request has been answered and changes the state of the request to
+		# "Answered". If the state is "Sent", it sends a message of type '2' to the element indicating that
+		# the request has been cancelled and removes the request from the request dictionary. If the state
+		# is "Active Retransmission", it sends a message of type 'S' to the element with the stream content.
+		# Finally, it returns 0.
 		case 'S':
 			stream_ID = request[2]
 			stream_content = request[3:]
@@ -103,9 +131,9 @@ def request_r(socket, request, origin_address, request_dict, neighbours_list):
 			print("Streaming TIME : ", request[2])
 			for req in request_dict.values():
 				print("LIST OF REQUESTS entry:", req.request_id,"|", req.stream_id,"|", req.state,"|" ,req.element)
-				#print("req ID : ", req.stream_id, " Looking for : ", stream_ID)
+
 				if req.stream_id == stream_ID :
-					#print("req_streamid == streamID : ", req.stream_id)
+		
 					if req.state == "Received":
 						print("req_state == received : ", req.state)
 						socket.sendto(('R|1|'+req.request_id).encode(), (req.element,9090))

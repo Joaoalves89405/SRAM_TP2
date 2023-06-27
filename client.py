@@ -11,16 +11,36 @@ from helpers.utils import BUFF_SIZE, host_ip, off_flag, port
 TIMEOUT = 3
 List_of_streams = []
 Active_neighbours = []
-Request_dict = dict() # ((Request_ID, origin_IP) : Request_OBJECT)
+Request_dict = dict()
 
 service_controller_ip = '10.0.1.10'
 port = 9090
 
 def send_join_request(socket):
+	"""
+	This function sends a join request message to a specified IP address and port using a socket.
+	
+	:param socket: The socket parameter is a reference to a socket object that is used to send the join
+	request message to a server. A socket is a communication endpoint that allows two processes to
+	communicate with each other over a network. In this case, the socket is used to send a message to a
+	server at a specific
+	"""
 	message = 'C|0|'
 	bytes_sent = socket.sendto(message.encode(), (service_controller_ip, port))
 
 def control_message_handle(response,socket):
+	"""
+	The function handles control messages by updating the list of active neighbours and list of streams,
+	and then requests a stream.
+	
+	:param response: The response parameter is a list containing information received from a control
+	message. The information includes the type of message, the sender's ID, a list of active neighbours,
+	and a list of available streams
+	:param socket: The "socket" parameter is likely a reference to a network socket object, which is
+	used to establish a connection and exchange data with another computer or device over a network. In
+	this context, it is probably being used to send and receive messages related to a streaming
+	application
+	"""
 	global Active_neighbours
 	global List_of_streams
 
@@ -41,6 +61,11 @@ def control_message_handle(response,socket):
 
 
 def receive_m(socket):
+	"""
+	This function receives messages from a socket and handles them based on their type.
+	
+	:param socket: The socket object used for communication with other nodes in the network
+	"""
 	global Request_dict
 	global Active_neighbours
 	global off_flag
@@ -63,6 +88,14 @@ def receive_m(socket):
 			print(sys.stderr, 'timed out request to server.')
 
 def request_stream(stream_ID, socket):
+	"""
+	The function sends a request for a stream to active neighbors using a randomly generated request ID
+	and adds the request to a dictionary.
+	
+	:param stream_ID: The ID of the stream being requested
+	:param socket: The socket parameter is a network socket object used for communication between the
+	client and server. It is used to send and receive data over the network
+	"""
 	global Request_dict
 	global Active_neighbours
 	n = 8
@@ -83,12 +116,15 @@ def request_stream(stream_ID, socket):
 		bytes_sent = socket.sendto(('R|0|'+r.request_id+'|'+r.stream_id).encode(), (neighbour, port))
 		print("Sent ", 'R|0|'+r.request_id+'|'+r.stream_id, " bytes to ", host_ip,":",neighbour)
 
+# This code block is the main function of the program. It creates a UDP socket, sets the buffer size,
+# binds the socket to a host IP and port, sends a join request to a service controller, starts a
+# thread to receive messages, prompts the user to input 'x' if they intend to leave, and if so, sets a
+# flag to indicate the program should stop running and sends a leave message to all active neighbors.
+# Finally, it waits for the receiver thread to finish before exiting the program.
 if __name__ == '__main__':
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     client_socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, BUFF_SIZE)
     client_socket.bind((host_ip, port))
-
-    # res = input("\nEnter room: \n1) Nature \n2) Action \n3) Horror \n4) Animation \n : ")
     send_join_request(client_socket)
     receiver_thread = threading.Thread(target=receive_m, args=(client_socket,))
     receiver_thread.start()

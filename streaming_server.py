@@ -10,11 +10,22 @@ from helpers.utils import BUFF_SIZE, host_ip, off_flag, port,socket_address
 
 List_of_streams = []
 Active_neighbours = []
-Request_dict = dict() # ((Request_ID, origin_IP) : Request_OBJECT)
+Request_dict = dict() 
 
 service_controller_ip = '10.0.1.10'
 
 def introduction_server(socket, streams_available):
+	"""
+	This function sends a hello message to a service controller with information about available
+	streams.
+	
+	:param socket: The socket parameter is a network socket object that is used to send data over the
+	network. It is typically created using the socket library in Python
+	:param streams_available: streams_available is a list of available streams that can be accessed
+	through the socket. Each stream in the list contains metadata such as its tag, name, frames per
+	second (fps), maximum delay, and type of data. The function creates a hello message that includes
+	this metadata for each stream and sends it
+	"""
 	hello_msg = 'C|0'
 	
 	for stream in streams_available:
@@ -22,13 +33,21 @@ def introduction_server(socket, streams_available):
 		hello_msg += stream_meta
 
 	print("Sent : ",hello_msg)
-	#print(service_controller_ip,port)
 	try:
 		socket.sendto(hello_msg.encode(), (service_controller_ip, port))
 	except Exception as e:
 		raise e
 
 def add_active_neighbour(neighbour):
+	"""
+	The function adds a neighbour to a list of active neighbours and checks if the neighbour is already
+	in the list.
+	
+	:param neighbour: The parameter "neighbour" is a variable that represents a neighboring object or
+	entity in a system or network. The function "add_active_neighbour" adds this neighbor to a list of
+	active neighbors called "Active_neighbours". If the neighbor is already in the list, the function
+	prints a message indicating
+	"""
 	global Active_neighbours
 
 	if neighbour not in Active_neighbours:	
@@ -37,10 +56,20 @@ def add_active_neighbour(neighbour):
 		print("Neighbour already active : please check the request")
 
 def generate_time_stream(socket, stream_ID, client_address):
+	"""
+	This function generates a time stream by repeatedly scheduling the sending of time to a client
+	address through a socket until a flag is set to turn it off.
+	
+	:param socket: The socket object is used to establish a network connection between the server and
+	the client. It is used to send and receive data over the network
+	:param stream_ID: The stream_ID parameter is a unique identifier for the time stream being
+	generated. It is used to differentiate between multiple time streams that may be running
+	simultaneously
+	:param client_address: The client_address parameter is likely the address of the client that is
+	receiving the time stream. It could be an IP address or a hostname
+	:return: an integer value of 0.
+	"""
 	global off_flag
-	# t = threading.Timer(1.0, send_time, args= [socket,stream_ID,client_address])
-	# t.daemon = True
-	# t.start()
 	while off_flag == 0:
 		s = sched.scheduler(time.time, time.sleep)
 		event = s.enter(1, 1, send_time, argument = (socket, stream_ID, client_address, ))
@@ -50,14 +79,31 @@ def generate_time_stream(socket, stream_ID, client_address):
 	return 0
 
 def send_time(socket, stream_ID, client_address):
+	"""
+	This function sends the current time to a client through a socket connection with a specified stream
+	ID and client address.
+	
+	:param socket: The socket object used for communication
+	:param stream_ID: The stream ID is a unique identifier for a particular stream of data being
+	transmitted over the network. It is used to distinguish between different streams of data and ensure
+	that they are delivered to the correct destination. In this function, the stream ID is passed as a
+	parameter and is included in the message that is
+	:param client_address: The client_address parameter is the address of the client that the message
+	will be sent to. It is a tuple containing the IP address and port number of the client
+	"""
 	message = 'R|S|'
 	t = time.strftime('%H:%M:%S', time.gmtime())
-	#print(t, end="\r")
 	message += stream_ID +'|'+ t
 	print(message)
 	socket.sendto(message.encode(),(client_address))
 
 def handle_requests(socket):
+	"""
+	This function handles incoming requests on a socket, processes them, and spawns threads to generate
+	time streams if necessary.
+	
+	:param socket: The socket object used for communication
+	"""
 	global off_flag
 	global Request_dict
 	global List_of_streams
@@ -70,7 +116,6 @@ def handle_requests(socket):
 			request = rq.decode()
 			print("THIS is the Request ", request)
 			request = request.split('|')
-			#print(request)
 			match request[0]:
 				case 'C': # Received a control ('C') message
 					if request[1] == '0':
@@ -79,7 +124,6 @@ def handle_requests(socket):
 							for neighbour in neighbour_list:
 								add_active_neighbour(neighbour)
 						else:
-							#print("There's not enough neighbours to initiate conversation")
 							time.sleep(3)
 							introduction_server(socket, List_of_streams)
 				case 'R':
@@ -101,13 +145,20 @@ def handle_requests(socket):
 				case 'S':
 					out = flood.request_r(socket, request, client_address, Request_dict, Active_neighbours)
 					if out == 0:
-						#generate_time_stream(socket, client_address)
 						pass
 	for thread in bag_of_threads:
 		thread.join()
 		#SEND request to relay servers of RQ
 
 
+# The `if __name__ == '__main__':` block is a conditional statement that checks if the current script
+# is being run as the main program. If it is, then it executes the code within the block. This is a
+# common Python idiom used to ensure that certain code is only executed when the script is run
+# directly, and not when it is imported as a module by another script. In this specific code, it
+# initializes the server socket, creates two streams, adds them to a list of streams, creates two
+# requests and adds them to a dictionary, calls the `introduction_server` function to send a hello
+# message to a service controller, starts a thread to handle incoming requests, and waits for user
+# input to exit the program.
 if __name__ == '__main__':
 
 
@@ -126,8 +177,6 @@ if __name__ == '__main__':
 	Request_dict[("1", host_ip)] = Request("1", sound_stream.tag, "Active Retransmission", host_ip)
 	print("Time tag : ", time_stream.tag)
 	print("Song tag : ", sound_stream.tag)
-
-
 
 	introduction_server(server_socket, List_of_streams)
 

@@ -2,11 +2,14 @@ import socket, threading, select
 from helpers.class_objects import Node, Stream
 from helpers.utils import BUFF_SIZE, off_flag, port,socket_address
 
-# Socket Create
 node_dict = dict()
 available_stream_list = []
 
 def setup():
+	"""
+	The function reads a configuration file and creates nodes with tags and IP addresses, and adds
+	neighbors to each node.
+	"""
 	global node_dict
 	with open("./config/conf_file.txt") as f:
 		for line in f:
@@ -16,27 +19,27 @@ def setup():
 				node = Node(tag, word[1], word[3])
 				node_dict[node.tag] = node
 				node_dict[node.ip] = node
-				#print(node_dict)
 			elif word[0] == "V":#Vizinhos
 				nodes = line.replace("\"", "").replace("\n", "")
 				node_tags = nodes.split(" ")[1:]
-				#print("This the node tag we are searching for ",node_tags)
 				main_node = node_dict.get(node_tags[0])
 				for node in node_tags[1:]:
 					main_node.add_neighbour(node)
-	#print(len(node_dict))
 
-def function():
-	pass
 
 def receive_requests(controller_socket):
+	"""
+	This function receives requests from a controller socket and sends control responses based on the
+	request type until an off flag is raised.
+	
+	:param controller_socket: The socket object used for communication with the controller
+	"""
 	global off_flag
 	
 	while off_flag == 0:
 		r,_,_ = select.select([controller_socket],[],[], 0)
 		if r:
 			(message_rq, client_address) = controller_socket.recvfrom(BUFF_SIZE)
-			#print("THIS is the Helllo message :", message_rq.decode(), "From: ", client_address[0])
 			request = message_rq.decode().split('|')
 			match request[0]:
 				case 'C':	#Control message
@@ -46,9 +49,18 @@ def receive_requests(controller_socket):
 
 
 def control_response(controller_socket, user_ip, message_rq):
+	"""
+	This function generates a response message to a controller node based on the active neighbours and
+	available streams, and sends it back to the same IP.
+	
+	:param controller_socket: The socket object used to communicate with the controller node
+	:param user_ip: The IP address of the node that sent the message
+	:param message_rq: The message_rq parameter is the message received from the node that triggered the
+	control_response function. It is a list of strings that contains information about the message, such
+	as the type of message and any additional data that may be included
+	"""
 	
 	active_n_list = []
-	#Prepare a response message, 'C' for control message and '0' for Hello 
 	message = 'C|0'
 
 	#Find which node sent the message and set it as active
@@ -71,7 +83,7 @@ def control_response(controller_socket, user_ip, message_rq):
 			message += str(neighbour) + ';'
 		message += str(active_n_list[-1])
 	else:
-		pass#print("Less than one active neighbour for ", node.tag,". List: ", active_n_list)		
+		pass
 
 	#Checks if node who sent the message is a Client
 	#If it is a client then the available streams are also sent in the message
@@ -90,7 +102,6 @@ def control_response(controller_socket, user_ip, message_rq):
 		case "S":
 			#This serves as a space to include new info in the hello message response
 			if message_rq[1] == '0' and len(message_rq)>2:
-				#print("Stream available received: ", message_rq[2:] )
 				for meta_info in message_rq[2:]:
 					print(meta_info)
 					stream_meta = meta_info.split(';')
@@ -98,7 +109,6 @@ def control_response(controller_socket, user_ip, message_rq):
 					if not (any(x.tag is stream_meta[0] for x in available_stream_list)):
 						available_stream_list.append(s)
 						
-			#print("STREAM LIST: ", available_stream_list)
 	#Finnaly the message is sent as response to the same IP
 	try:
 		print("Sent message:",message)
@@ -108,24 +118,21 @@ def control_response(controller_socket, user_ip, message_rq):
 		raise Exception(e)
 
 
-
-
-
+# This code block is the main entry point of the program. It creates a UDP socket, sets some socket
+# options, binds the socket to a specific address, calls the `setup()` function to read a
+# configuration file and create nodes with tags and IP addresses, and adds neighbors to each node. It
+# then starts a thread to receive requests from the controller socket and sends control responses
+# based on the request type until an off flag is raised. Finally, it prompts the user to input 'x' if
+# they intend to leave, which sets the `off_flag` variable to 1 and terminates the program.
 if __name__ == '__main__':
-
 
 	controller_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 	controller_socket.setsockopt(socket.SOL_SOCKET,socket.SO_RCVBUF,BUFF_SIZE)
 	controller_socket.bind(socket_address)
 	#network = input("Use overlay(o) or underlay(u) network?\n: ")
-	#print(controller_socket)
 	setup()
-	#e1_nlist = node_dict.get("E1").get_neighbours_list()
-	#print(e1_nlist)
 	receiver_thread = threading.Thread(target = receive_requests, args = (controller_socket,))
 	receiver_thread.start()
 	leave = input("If you intend to leave type 'x'\n")
 	if leave == "x":
 		off_flag = 1
-
-	#receiver_thread.join()

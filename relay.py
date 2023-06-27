@@ -9,11 +9,18 @@ from helpers.utils import BUFF_SIZE, off_flag, port,socket_address
 
 List_of_streams = []
 Active_neighbours = []
-Request_dict = dict() # ((Request_ID, origin_IP) : Request_OBJECT)
+Request_dict = dict()
 
 service_controller_ip = '10.0.1.10'
 
 def introduction_server(socket):
+	"""
+	This function sends a "hello" message to a specified IP address and port using a socket.
+	
+	:param socket: The `socket` parameter is a socket object that represents a network connection
+	between two endpoints. It is used to send and receive data over the network. In this case, it is
+	used to send a hello message to a service controller at a specific IP address and port
+	"""
 	hello_msg = 'C|0|'
 	try:
 		socket.sendto(hello_msg.encode(), (service_controller_ip, port))
@@ -21,6 +28,15 @@ def introduction_server(socket):
 		raise e
 
 def add_active_neighbour(neighbour):
+	"""
+	The function adds a neighbour to a list of active neighbours and checks if the neighbour is already
+	in the list.
+	
+	:param neighbour: The parameter "neighbour" is a variable that represents a neighboring object or
+	entity in a system or network. The function "add_active_neighbour" adds this neighbor to a list of
+	active neighbors called "Active_neighbours". If the neighbor is already in the list, the function
+	prints a message indicating
+	"""
 	global Active_neighbours
 
 	if neighbour not in Active_neighbours:	
@@ -29,6 +45,12 @@ def add_active_neighbour(neighbour):
 		print("Neighbour already active : please check the request")
 
 def handle_requests(socket):
+	"""
+	This is a Python function that handles incoming requests on a socket and performs actions based on
+	the type of request received.
+	
+	:param socket: The socket object used for communication
+	"""
 	global off_flag
 	global Request_dict
 	
@@ -36,11 +58,9 @@ def handle_requests(socket):
 		r,_,_ = select.select([socket],[],[], 0)
 		if r:
 			(rq, peer_address) = socket.recvfrom(BUFF_SIZE)
-			#print("THIS is the Request ", rq.decode())
 			request = rq.decode().split('|')
 			# if len(Request_dict.values())>0:
 			# 	for req in Request_dict.values():
-			# 		print("Stored: ",req.request_id," from", req.element)
 
 			match request[0]:
 				case 'C':
@@ -56,13 +76,19 @@ def handle_requests(socket):
 				case 'R':
 					out = flood.request_r(socket, request, peer_address, Request_dict, Active_neighbours)
 					
-if __name__ == '__main__':
 
+# This is the main function of the program. It creates a UDP socket, sets the buffer size, binds the
+# socket to a specific address, and prints a message indicating that the relay element is running on
+# that address. It then calls the `introduction_server` function to send a hello message to a service
+# controller. It creates a thread to handle incoming requests on the socket and starts the thread. It
+# prompts the user to input 'x' if they intend to leave, and if the input is 'x', it sends a leave
+# message to all active neighbors and sets the `off_flag` to 1 to stop the thread. Finally, it joins
+# the thread.
+if __name__ == '__main__':
 
 	relay_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 	relay_socket.setsockopt(socket.SOL_SOCKET,socket.SO_RCVBUF,BUFF_SIZE)
 	relay_socket.bind(socket_address)
-	#network = input("Use overlay(o) or underlay(u) network?\n: ")
 	print('Running Relay elemnet on ', relay_socket.getsockname())
 
 	introduction_server(relay_socket)
