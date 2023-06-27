@@ -76,11 +76,12 @@ def receive_m(socket):
 		if readable:
 			response, node_address = socket.recvfrom(BUFF_SIZE)
 			response = response.decode().split('|')
-			print("response", response)
 			match response[0]:
 				case 'C':
 					control_message_handle(response, socket)
 				case 'R':
+					if(len(response) == 4):
+						print("Content received: ", response[len(response)-1])
 					out = flood.request_r(socket, response, node_address, Request_dict, Active_neighbours)
 					#print("Received well = ",out)
 			
